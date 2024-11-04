@@ -9,21 +9,67 @@
             font-family: Arial, sans-serif;
             text-align: center;
             margin: 50px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         img {
+            margin-top: 20px;
+            max-width: 100%;
+            height: auto;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .error {
+            color: red;
             margin-top: 20px;
         }
     </style>
 </head>
 <body>
     <h1>QR Code Generator</h1>
-    <input type="text" id="urlInput" placeholder="Enter URL (e.g., www.youtube.com)" />
+    <input type="text" id="urlInput" placeholder="Enter URL (e.g., www.youtube.com)" aria-label="URL input" />
     <button id="generateBtn">Generate QR Code</button>
     <div id="qrCodeContainer"></div>
+    <div id="loading" class="loading">Generating QR Code...</div>
+    <div id="errorMessage" class="error"></div>
 
     <script>
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const url = document.getElementById('urlInput').value;
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = ''; // Clear previous error messages
+
+            // Validate URL
+            const urlPattern = /^(https?:\/\/)?(www\.)?[a-z0-9-]+\.[a-z]{2,}([\/\w-]*)*$/i;
+            if (!urlPattern.test(url)) {
+                errorMessage.textContent = 'Please enter a valid URL.';
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
             const response = await fetch('/generate', {
                 method: 'POST',
                 headers: {
@@ -32,11 +78,13 @@
                 body: JSON.stringify({ url }),
             });
 
+            document.getElementById('loading').style.display = 'none';
+
             if (response.ok) {
                 const data = await response.json();
                 document.getElementById('qrCodeContainer').innerHTML = `<img src="${data.qrCodeDataUrl}" alt="QR Code" />`;
             } else {
-                alert('Error generating QR code');
+                errorMessage.textContent = 'Error generating QR code. Please try again.';
             }
         });
     </script>
