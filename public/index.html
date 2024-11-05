@@ -15,7 +15,7 @@
         h1 {
             color: #4CAF50;
         }
-        input[type="text"] {
+        input[type="text"], input[type="color"] {
             padding: 10px;
             width: 300px;
             border: 1px solid #ccc;
@@ -51,6 +51,13 @@
 <body>
     <h1>QR Code Generator</h1>
     <input type="text" id="urlInput" placeholder="Enter URL (e.g., www.youtube.com)" aria-label="URL input" />
+    <br><br>
+    <label for="foregroundColor">Foreground Color:</label>
+    <input type="color" id="foregroundColor" value="#000000" aria-label="Foreground color" />
+    <br><br>
+    <label for="backgroundColor">Background Color:</label>
+    <input type="color" id="backgroundColor" value="#ffffff" aria-label="Background color" />
+    <br><br>
     <button id="generateBtn">Generate QR Code</button>
     <div id="qrCodeContainer"></div>
     <div id="loading" class="loading">Generating QR Code...</div>
@@ -59,6 +66,8 @@
     <script>
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const url = document.getElementById('urlInput').value;
+            const foregroundColor = document.getElementById('foregroundColor').value;
+            const backgroundColor = document.getElementById('backgroundColor').value;
             const errorMessage = document.getElementById('errorMessage');
             errorMessage.textContent = ''; // Clear previous error messages
 
@@ -75,7 +84,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ url }),
+                body: JSON.stringify({ url, foregroundColor, backgroundColor }), // Include colors
             });
 
             document.getElementById('loading').style.display = 'none';
@@ -83,7 +92,8 @@
             if (response.ok) {
                 const data = await response.json();
                 document.getElementById('qrCodeContainer').innerHTML = `<img src="${data.qrCodeDataUrl}" alt="QR Code" />`;
-            } else {                errorMessage.textContent = 'Error generating QR code. Please try again.';
+            } else {
+                errorMessage.textContent = 'Error generating QR code. Please try again.';
             }
         });
     </script>
