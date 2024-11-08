@@ -15,7 +15,7 @@
         h1 {
             color: #4CAF50;
         }
-        input[type="text"] {
+        input[type="text"], input[type="file"] {
             padding: 10px;
             width: 300px;
             border: 1px solid #ccc;
@@ -50,6 +50,8 @@
 </head>
 <body>
     <h1>QR Code Generator</h1>
+
+    <!-- Single URL input section -->
     <input type="text" id="urlInput" placeholder="Enter URL (e.g., www.example.com)" aria-label="URL input" />
     <br><br>
     <button id="generateBtn">Generate QR Code</button>
@@ -57,7 +59,19 @@
     <div id="loading" class="loading">Generating QR Code...</div>
     <div id="errorMessage" class="error"></div>
 
+    <!-- Add a download button -->
+    <br><br>
+    <button id="downloadBtn" style="display: none;">Download QR Code</button>
+
+    <!-- Batch QR Code Generation Section -->
+    <h2>Batch QR Code Generator</h2>
+    <input type="file" id="fileInput" accept=".txt" aria-label="File input" />
+    <br><br>
+    <button id="batchGenerateBtn">Generate Batch QR Codes</button>
+    <div id="batchResult" class="error"></div>
+
     <script>
+        // Single URL QR Code generation
         document.getElementById('generateBtn').addEventListener('click', async () => {
             const url = document.getElementById('urlInput').value;
             const errorMessage = document.getElementById('errorMessage');
@@ -83,9 +97,74 @@
 
             if (response.ok) {
                 const data = await response.json();
-                document.getElementById('qrCodeContainer').innerHTML = `<img src="${data.qrCodeDataUrl}" alt="QR Code" />`;
+
+                // Display the QR code image
+                document.getElementById('qrCodeContainer').innerHTML = `<img src="${data.qrCodeUrl}" alt="QR Code" />`;
+
+                // Enable the download button
+                const downloadBtn = document.getElementById('downloadBtn');
+                downloadBtn.style.display = 'inline-block';
+                downloadBtn.addEventListener('click', () => {
+                    // Trigger the download by creating an anchor tag
+                    const link = document.createElement('a');
+                    link.href = data.downloadUrl;
+                    link.download = 'qrcode.png';  // Name the downloaded file
+                    link.click();
+                });
             } else {
                 errorMessage.textContent = 'Error generating QR code. Please try again.';
+            }
+        });
+
+                // Batch QR Code generation
+                document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const batchResult = document.getElementById('batchResult');
+            batchResult.textContent = ''; // Clear previous messages
+
+            if (!fileInput.files.length) {
+                batchResult.textContent = 'Please select a text file.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            document.getElementById('loading').style.display = 'block';
+            const response = await fetch('/generate-batch', {
+                method: 'POST',
+                body: formData,
+            });
+
+            document.getElementById('loading').style.display = 'none';
+
+            if (response.ok) {
+                const data = await response.json();
+                batchResult.textContent = data.message;
+
+                // Optionally, you can display links to the generated QR codes
+                const qrCodesContainer = document.createElement('div');
+                qrCodesContainer.innerHTML = `<h3>Generated QR Codes:</h3>`;
+                document.body.appendChild(qrCodesContainer);
+
+                // Fetch and display the generated QR codes
+                const qrCodesDir = data.outputDir; // The directory where QR codes are saved
+                const files = await fetch(qrCodesDir); // This fetches the directory contents
+
+                // Assuming your server allows listing of files in the public/qr_codes directory
+                if (files.ok) {
+                    const fileList = await files.json(); // Assuming the server returns a JSON list of files
+                    fileList.forEach(file => {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = `${qrCodesDir}${file}`;
+                        imgElement.alt = `QR Code for ${file}`;
+                        imgElement.style.width = '100px'; // Set a smaller size for display
+                        imgElement.style.margin = '5px';
+                        qrCodesContainer.appendChild(imgElement);
+                    });
+                }
+            } else {
+                batchResult.textContent = 'Error generating batch QR codes. Please try again.';
             }
         });
     </script>
