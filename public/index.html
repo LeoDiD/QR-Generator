@@ -46,6 +46,21 @@
             color: red;
             margin-top: 20px;
         }
+        /* Spinner styles */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -56,7 +71,9 @@
     <br><br>
     <button id="generateBtn">Generate QR Code</button>
     <div id="qrCodeContainer"></div>
-    <div id="loading" class="loading">Generating QR Code...</div>
+    <div id="loading" class="loading">
+        <div class="spinner"></div> Generating QR Code...
+    </div>
     <div id="errorMessage" class="error"></div>
 
     <!-- Add a download button -->
@@ -84,6 +101,7 @@
                 return;
             }
 
+            // Show loading animation
             document.getElementById('loading').style.display = 'block';
             const response = await fetch('/generate', {
                 method: 'POST',
@@ -93,6 +111,7 @@
                 body: JSON.stringify({ url }),
             });
 
+            // Hide loading animation
             document.getElementById('loading').style.display = 'none';
 
             if (response.ok) {
@@ -104,20 +123,20 @@
                 // Enable the download button
                 const downloadBtn = document.getElementById('downloadBtn');
                 downloadBtn.style.display = 'inline-block';
-                downloadBtn.addEventListener('click', () => {
-                    // Trigger the download by creating an anchor tag
-                    const link = document.createElement('a');
+                downloadBtn.onclick = () => {
+                                        // Trigger the download by creating an anchor tag
+                                        const link = document.createElement('a');
                     link.href = data.downloadUrl;
                     link.download = 'qrcode.png';  // Name the downloaded file
                     link.click();
-                });
+                };
             } else {
                 errorMessage.textContent = 'Error generating QR code. Please try again.';
             }
         });
 
-                // Batch QR Code generation
-                document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
+        // Batch QR Code generation
+        document.getElementById('batchGenerateBtn').addEventListener('click', async () => {
             const fileInput = document.getElementById('fileInput');
             const batchResult = document.getElementById('batchResult');
             batchResult.textContent = ''; // Clear previous messages
@@ -130,12 +149,14 @@
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
 
+            // Show loading animation
             document.getElementById('loading').style.display = 'block';
             const response = await fetch('/generate-batch', {
                 method: 'POST',
                 body: formData,
             });
 
+            // Hide loading animation
             document.getElementById('loading').style.display = 'none';
 
             if (response.ok) {
@@ -149,11 +170,11 @@
 
                 // Fetch and display the generated QR codes
                 const qrCodesDir = data.outputDir; // The directory where QR codes are saved
-                const files = await fetch(qrCodesDir); // This fetches the directory contents
 
                 // Assuming your server allows listing of files in the public/qr_codes directory
-                if (files.ok) {
-                    const fileList = await files.json(); // Assuming the server returns a JSON list of files
+                const filesResponse = await fetch(qrCodesDir);
+                if (filesResponse.ok) {
+                    const fileList = await filesResponse.json(); // Assuming the server returns a JSON list of files
                     fileList.forEach(file => {
                         const imgElement = document.createElement('img');
                         imgElement.src = `${qrCodesDir}${file}`;
@@ -162,6 +183,8 @@
                         imgElement.style.margin = '5px';
                         qrCodesContainer.appendChild(imgElement);
                     });
+                } else {
+                    batchResult.textContent = 'Error fetching generated QR codes.';
                 }
             } else {
                 batchResult.textContent = 'Error generating batch QR codes. Please try again.';
