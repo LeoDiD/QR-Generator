@@ -31,7 +31,8 @@ app.post('/generate', async (req, res) => {
 
         // Create a unique filename using a hash
         const fileName = `qrcode_${crypto.randomBytes(16).toString('hex')}.png`;
-        
+        const filePath = path.join(__dirname, 'public', fileName); // Define the path to save the file
+
         // Write the image data (base64) to a PNG file
         const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, ''); // Strip the base64 prefix
         fs.writeFile(filePath, base64Data, 'base64', (err) => {
